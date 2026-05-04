@@ -55,3 +55,11 @@ resource "aws_apigatewayv2_stage" "default" {
     })
   }
 }
+
+resource "aws_lambda_permission" "apigw_invoke_upload_lambda" {
+  statement_id  = "AllowAPIGatewayInvokeUploadLambda-${terraform.workspace}"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.upload_lambda.upload_image
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.api_gateway.execution_arn}/*/POST/upload" # Se puede usar /*/* porque solo hay una ruta creada
+}
