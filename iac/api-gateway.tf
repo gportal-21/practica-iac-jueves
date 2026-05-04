@@ -22,3 +22,9 @@ resource "aws_apigatewayv2_integration" "upload_lambda" {
   timeout_milliseconds   = 30000
   payload_format_version = "2.0"
 }
+
+resource "aws_apigatewayv2_route" "post_upload" {
+  api_id    = aws_apigatewayv2_api.api_gateway.id
+  route_key = "POST /upload"
+  target    = "integrations/${aws_apigatewayv2_integration.upload_lambda.id}"
+}
