@@ -162,7 +162,7 @@ resource "aws_nat_gateway" "nat_a" {
     Name = "image-processor-nat-a-${terraform.workspace}"
   }
 
-  depends_on = [aws_internet_gateway.main]
+  depends_on = [aws_internet_gateway.igw]
 }
 
 resource "aws_nat_gateway" "nat_b" {
@@ -173,5 +173,5 @@ resource "aws_nat_gateway" "nat_b" {
     Name = "image-processor-nat-b-${terraform.workspace}"
   }
 
-  depends_on = [aws_internet_gateway.main]
+  depends_on = [aws_internet_gateway.igw]
 }
