@@ -175,3 +175,96 @@ resource "aws_nat_gateway" "nat_b" {
 
   depends_on = [aws_internet_gateway.igw]
 }
+
+# SG
+resource "aws_security_group" "upload_lambda" {
+  name        = "image-processor-sg-upload-lambda-${terraform.workspace}"
+  description = "SG para upload-lambda: outbound HTTPS a VPC Endpoints"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "image-processor-sg-upload-lambda-${terraform.workspace}"
+  }
+}
+
+resource "aws_security_group" "crop_lambda" {
+  name        = "image-processor-sg-crop-lambda-${terraform.workspace}"
+  description = "SG para crop-lambda: outbound HTTPS a VPC Endpoints"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "image-processor-sg-crop-lambda-${terraform.workspace}"
+  }
+}
+
+resource "aws_security_group" "vpce_sqs" {
+  name        = "image-processor-sg-vpce-sqs-${terraform.workspace}"
+  description = "SG para SQS Interface VPC Endpoint: inbound HTTPS desde Lambdas"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "image-processor-sg-vpce-sqs-${terraform.workspace}"
+  }
+}
+
+# Egress rules
+resource "aws_vpc_security_group_egress_rule" "upload_to_vpce_sqs" {
+  security_group_id            = aws_security_group.upload_lambda.id
+  referenced_security_group_id = aws_security_group.vpce_sqs.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  description                  = "HTTPS to SQS VPC Endpoint"
+}
+
+resource "aws_vpc_security_group_egress_rule" "crop_to_vpce_sqs" {
+  security_group_id            = aws_security_group.crop_lambda.id
+  referenced_security_group_id = aws_security_group.vpce_sqs.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  description                  = "HTTPS to SQS VPC Endpoint"
+}
+
+data "aws_prefix_list" "s3" {
+  name = "com.amazonaws.us-east-2.s3"
+}
+
+resource "aws_vpc_security_group_egress_rule" "upload_to_s3" {
+  security_group_id = aws_security_group.upload_lambda.id
+  prefix_list_id    = data.aws_prefix_list.s3.id
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  description       = "HTTPS to S3 (via VPC Gateway Endpoint)"
+}
+
+resource "aws_vpc_security_group_egress_rule" "crop_to_s3" {
+  security_group_id = aws_security_group.crop_lambda.id
+  prefix_list_id    = data.aws_prefix_list.s3.id
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  description       = "HTTPS to S3 (via VPC Gateway Endpoint)"
+}
+
+# Ingress rules
+resource "aws_vpc_security_group_ingress_rule" "vpce_sqs_from_upload" {
+  security_group_id            = aws_security_group.vpce_sqs.id
+  referenced_security_group_id = aws_security_group.upload_lambda.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  description                  = "HTTPS from upload-lambda"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "vpce_sqs_from_crop" {
+  security_group_id            = aws_security_group.vpce_sqs.id
+  referenced_security_group_id = aws_security_group.crop_lambda.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  description                  = "HTTPS from crop-lambda"
+}
+
+
