@@ -40,3 +40,47 @@ resource "aws_s3_bucket_ownership_controls" "images" {
     object_ownership = "BucketOwnerEnforced"
   }
 }
+
+resource "aws_s3_bucket_lifecycle_configuration" "images" {
+  bucket = aws_s3_bucket.images.id
+
+  rule {
+    id     = "expire-uploads-after-30-days"
+    status = "Enabled"
+
+    filter {
+      prefix = "uploads/"
+    }
+
+    expiration {
+      days = 30
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 7
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+
+  rule {
+    id     = "expire-processed-after-90-days"
+    status = "Enabled"
+
+    filter {
+      prefix = "processed/"
+    }
+
+    expiration {
+      days = 90
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 7
+    }
+  }
+
+  depends_on = [aws_s3_bucket_versioning.images]
+}
