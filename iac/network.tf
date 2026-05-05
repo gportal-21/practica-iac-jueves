@@ -17,6 +17,8 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
+#############################################################
+
 # Public subnets
 resource "aws_subnet" "public_a" {
   vpc_id                  = aws_vpc.main.id
@@ -61,6 +63,8 @@ resource "aws_subnet" "private_b" {
     Name = "image-processor-private-b-${terraform.workspace}"
   }
 }
+
+#############################################################
 
 # Route tables
 resource "aws_route_table" "public" {
@@ -112,4 +116,50 @@ resource "aws_route_table_association" "private_a" {
 resource "aws_route_table_association" "private_b" {
   subnet_id      = aws_subnet.private_b.id
   route_table_id = aws_route_table.private_b.id
+}
+
+#############################################################
+
+# EIP
+resource "aws_eip" "nat_a" {
+  domain = "vpc"
+
+  tags = {
+    Name = "image-processor-eip-nat-a-${terraform.workspace}"
+  }
+
+  depends_on = [aws_internet_gateway.igw]
+}
+
+resource "aws_eip" "nat_b" {
+  domain = "vpc"
+
+  tags = {
+    Name = "image-processor-eip-nat-b-${terraform.workspace}"
+  }
+
+  depends_on = [aws_internet_gateway.igw]
+}
+
+# NAT Gateways
+resource "aws_nat_gateway" "nat_a" {
+  allocation_id = aws_eip.nat_a.id
+  subnet_id     = aws_subnet.public_a.id
+
+  tags = {
+    Name = "image-processor-nat-a-${terraform.workspace}"
+  }
+
+  depends_on = [aws_internet_gateway.main]
+}
+
+resource "aws_nat_gateway" "nat_b" {
+  allocation_id = aws_eip.nat_b.id
+  subnet_id     = aws_subnet.public_b.id
+
+  tags = {
+    Name = "image-processor-nat-b-${terraform.workspace}"
+  }
+
+  depends_on = [aws_internet_gateway.main]
 }
