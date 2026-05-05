@@ -267,4 +267,79 @@ resource "aws_vpc_security_group_ingress_rule" "vpce_sqs_from_crop" {
   description                  = "HTTPS from crop-lambda"
 }
 
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.us-east-2.s3"
+  vpc_endpoint_type = "Gateway"
 
+  route_table_ids = [
+    aws_route_table.private_a.id,
+    aws_route_table.private_b.id,
+  ]
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowS3ReadWriteOnImagesBucket"
+        Effect    = "Allow"
+        Principal = "*"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::image-processor-${terraform.workspace}-images-*",
+          "arn:aws:s3:::image-processor-${terraform.workspace}-images-*/*"
+        ]
+      }
+    ]
+  })
+
+  tags = {
+    Name = "image-processor-vpce-s3-${terraform.workspace}"
+  }
+}
+
+resource "aws_vpc_endpoint" "sqs" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.us-east-2.sqs"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids = [
+    aws_subnet.private_a.id,
+    aws_subnet.private_b.id,
+  ]
+
+  security_group_ids = [
+    aws_security_group.vpce_sqs.id,
+  ]
+
+  private_dns_enabled = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowSQSAccessToImageQueue"
+        Effect    = "Allow"
+        Principal = "*"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:ChangeMessageVisibility",
+          "sqs:SendMessage"
+        ]
+        Resource = [
+          "arn:aws:sqs:us-east-2:*:image-processor-${terraform.workspace}-image-queue",
+          "arn:aws:sqs:us-east-2:*:image-processor-${terraform.workspace}-image-dlq"
+        ]
+      }
+    ]
+  })
+
+  tags = {
+    Name = "image-processor-vpce-sqs-${terraform.workspace}"
+  }
+}
