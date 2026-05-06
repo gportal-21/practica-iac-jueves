@@ -88,6 +88,14 @@ Revisar los recursos que serán creados y asegúrate de que todo sea correcto.
 
 ### Paso 5: Aplicar la Infraestructura
 
+Antes de crear los recursos se debe cambiar el nombre del profile en el provider de aws dentro del main.tf
+
+```bash
+provider "aws" {
+  profile = "tu_profile_aws"
+}
+```
+
 Crear los recursos en AWS:
 
 ```bash
