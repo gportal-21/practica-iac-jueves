@@ -10,13 +10,13 @@ resource "aws_cloudwatch_log_group" "crop_lambda" {
 
 data "archive_file" "upload_lambda_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/../src/upload-lambda"
+  source_dir  = "${path.module}/../src/lambda/upload-lambda"
   output_path = "${path.module}/build/upload-lambda.zip"
 }
 
 data "archive_file" "crop_lambda_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/../src/crop-lambda"
+  source_dir  = "${path.module}/../src/lambda/crop-lambda"
   output_path = "${path.module}/build/crop-lambda.zip"
 }
 
