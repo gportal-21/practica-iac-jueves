@@ -29,6 +29,11 @@ resource "aws_apigatewayv2_route" "post_upload" {
   target    = "integrations/${aws_apigatewayv2_integration.upload_lambda.id}"
 }
 
+resource "aws_cloudwatch_log_group" "apigw_access" {
+  name              = "/aws/apigateway/image-processor-${terraform.workspace}"
+  retention_in_days = 14
+}
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.api_gateway.id
   name        = "$default"
