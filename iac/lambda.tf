@@ -19,3 +19,65 @@ data "archive_file" "crop_lambda_zip" {
   source_dir  = "${path.module}/../src/crop-lambda"
   output_path = "${path.module}/build/crop-lambda.zip"
 }
+
+resource "aws_lambda_function" "upload_lambda" {
+  function_name = "image-processor-upload-${terraform.workspace}"
+  role          = aws_iam_role.upload_lambda.arn
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+
+  filename         = data.archive_file.upload_lambda_zip.output_path
+  source_code_hash = data.archive_file.upload_lambda_zip.output_base64sha256
+
+  memory_size = 256
+  timeout     = 30
+
+  environment {
+    variables = {
+      S3_BUCKET     = aws_s3_bucket.images.bucket
+      UPLOAD_PREFIX = "uploads/"
+    }
+  }
+
+  vpc_config {
+    subnet_ids         = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+    security_group_ids = [aws_security_group.upload_lambda.id]
+  }
+
+  tags = {
+    Name = "image-processor-upload-${terraform.workspace}"
+  }
+
+  depends_on = [aws_cloudwatch_log_group.upload_lambda]
+}
+
+resource "aws_lambda_function" "crop_lambda" {
+  function_name = "image-processor-crop-${terraform.workspace}"
+  role          = aws_iam_role.crop_lambda.arn
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+
+  filename         = data.archive_file.crop_lambda_zip.output_path
+  source_code_hash = data.archive_file.crop_lambda_zip.output_base64sha256
+
+  memory_size = 512
+  timeout     = 60
+
+  environment {
+    variables = {
+      S3_BUCKET        = aws_s3_bucket.images.bucket
+      PROCESSED_PREFIX = "processed/"
+    }
+  }
+
+  vpc_config {
+    subnet_ids         = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+    security_group_ids = [aws_security_group.crop_lambda.id]
+  }
+
+  tags = {
+    Name = "image-processor-crop-${terraform.workspace}"
+  }
+
+  depends_on = [aws_cloudwatch_log_group.crop_lambda]
+}
