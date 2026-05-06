@@ -1,0 +1,14 @@
+{
+  "name": "crop-lambda",
+  "version": "1.0.0",
+  "description": "Procesa imágenes desde SQS, las recorta circularmente y sube a processed/",
+  "main": "index.js",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "sharp": "^0.33.5"
+  },
+  "scripts": {
+    "install-lambda": "npm install --cpu=x64 --os=linux --libc=glibc sharp && npm install"
+  }
+}
