@@ -26,5 +26,5 @@ provider "docker" {
 }
 
 provider "aws" {
-  profile = "gpdev"
+  profile = "tu_profile_aws"
 }
