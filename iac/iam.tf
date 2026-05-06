@@ -52,3 +52,47 @@ resource "aws_iam_role" "crop_lambda" {
     Name = "crop-lambda-role-${terraform.workspace}"
   }
 }
+
+resource "aws_iam_role_policy_attachment" "crop_basic" {
+  role       = aws_iam_role.crop_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "crop_vpc" {
+  role       = aws_iam_role.crop_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+data "aws_iam_policy_document" "crop_combined" {
+  statement {
+    sid       = "AllowGetObjectFromUploads"
+    effect    = "Allow"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.images.arn}/uploads/*"]
+  }
+
+  statement {
+    sid       = "AllowPutObjectInProcessed"
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.images.arn}/processed/*"]
+  }
+
+  statement {
+    sid    = "AllowSQSConsumer"
+    effect = "Allow"
+    actions = [
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+      "sqs:ChangeMessageVisibility"
+    ]
+    resources = [aws_sqs_queue.image_queue.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "crop_combined" {
+  name   = "crop-lambda-combined-policy"
+  role   = aws_iam_role.crop_lambda.id
+  policy = data.aws_iam_policy_document.crop_combined.json
+}
