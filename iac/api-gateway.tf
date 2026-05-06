@@ -29,6 +29,11 @@ resource "aws_apigatewayv2_route" "post_upload" {
   target    = "integrations/${aws_apigatewayv2_integration.upload_lambda.id}"
 }
 
+resource "aws_cloudwatch_log_group" "apigw_access" {
+  name              = "/aws/apigateway/image-processor-${terraform.workspace}"
+  retention_in_days = 14
+}
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.api_gateway.id
   name        = "$default"
@@ -59,7 +64,7 @@ resource "aws_apigatewayv2_stage" "default" {
 resource "aws_lambda_permission" "apigw_invoke_upload_lambda" {
   statement_id  = "AllowAPIGatewayInvokeUploadLambda-${terraform.workspace}"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.upload_lambda.upload_image
+  function_name = aws_lambda_function.upload_lambda.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.api_gateway.execution_arn}/*/POST/upload" # Se puede usar /*/* porque solo hay una ruta creada
 }
