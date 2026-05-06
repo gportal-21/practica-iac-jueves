@@ -1,16 +1,18 @@
-FROM node:18-alpine
+# Usa Node 20 LTS (incluye fetch y FormData nativos)
+FROM node:20-alpine
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY package.json .
-RUN npm install --omit=dev
+COPY package.json ./
 
-COPY index.js .
+RUN npm install
 
+COPY index.js ./
 
 EXPOSE 3000
 
 CMD ["node", "index.js"]
 
-# docker build -t lab/api .
-# docker run -p 3000:3000 lab/api
+# docker build -t image-processor-client .
+
+# docker run -d -p 3000:3000 -e API_GATEWAY_URL=replace_with_actual_url --name image-client image-processor-client

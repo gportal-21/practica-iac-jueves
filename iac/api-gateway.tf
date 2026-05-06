@@ -10,6 +10,10 @@ resource "aws_apigatewayv2_api" "api_gateway" {
   }
 }
 
+output "api_base_url" {
+  description = "URL base APIGateway"
+  value       = aws_apigatewayv2_api.image_processor.api_endpoint
+}
 
 resource "aws_apigatewayv2_integration" "upload_lambda" {
   api_id           = aws_apigatewayv2_api.api_gateway.id

@@ -18,6 +18,11 @@ data "archive_file" "crop_lambda_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../src/lambda/crop-lambda"
   output_path = "${path.module}/build/crop-lambda.zip"
+
+  excludes = [
+    "node_modules/.bin",
+    "build.ps1",
+  ]
 }
 
 resource "aws_lambda_function" "upload_lambda" {
