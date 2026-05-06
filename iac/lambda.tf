@@ -81,3 +81,16 @@ resource "aws_lambda_function" "crop_lambda" {
 
   depends_on = [aws_cloudwatch_log_group.crop_lambda]
 }
+
+resource "aws_lambda_event_source_mapping" "sqs_to_crop" {
+  event_source_arn = aws_sqs_queue.image_queue.arn
+  function_name    = aws_lambda_function.crop_lambda.arn
+
+  batch_size = 5
+
+  function_response_types = ["ReportBatchItemFailures"]
+
+  maximum_batching_window_in_seconds = 5
+
+  enabled = true
+}
